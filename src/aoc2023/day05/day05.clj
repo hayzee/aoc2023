@@ -7,9 +7,9 @@
 (defn str->nums
   [st]
   (let [st (s/trim st)]
-   (when (not= st "")
-     (->> (s/split st #"\s+")
-          (mapv #(Long/parseLong %))))))
+    (when (not= st "")
+      (->> (s/split st #"\s+")
+           (mapv #(Long/parseLong %))))))
 
 (comment
 
@@ -67,30 +67,59 @@
     :else (throw (ex-info "Unknown input format " {:line st}))))
 
 (defn input->map
+  "Process the input file and get an in-map"
   [fname]
   (->> (slurp (io/resource fname))
-      s/split-lines
-      (keep extract-line)
-      flatten
-      ;     (fn [sq] (concat (first sq) (rest sq)))                ; a bit ugly, but flattens the first vector
-      (partition-by keyword?)
-      (partition 2)
-      (map (fn [[[f] s]]
-             (if (= :seeds f)
-               [f (vec s)]
-               [f (vec (map (fn [triple] {:triple    (vec triple)
-                                          :triple-fn (triple->fn triple)}) (partition 3 s)))])))
+       s/split-lines
+       (keep extract-line)
+       flatten
+       (partition-by keyword?)
+       (partition 2)
+       (map (fn [[[f] s]]
+              (if (= :seeds f)
+                [f (vec s)]
+                [f (vec (map (fn [triple] {:triple    (vec triple)
+                                           :triple-fn (triple->fn triple)}) (partition 3 s)))])))
        (into {})))
 
+(def in-map (input->map "day05/test.txt"))
+
 (defn fns-for
+  "Get all the triple fns from in-map for the given kwd."
   [in-map kwd]
   (->> (kwd in-map)
        (mapv :triple-fn)))
 
-(defn mapping-for
-  [in-map kwd arg]
-  ((apply juxt (fns-for in-map kwd)) arg))
+; :seed-to-soil
+; :soil-to-fertilizer
+; :fertilizer-to-water
+; :water-to-light
+; :light-to-temperature
+; :temperature-to-humidity
+; :humidity-to-location
+(def fns-for-in-map (fns-for in-map :light-to-temperature))
 
-(let [in-map (dissoc (input->map "day05/test.txt") :seeds)
-      in-map-keys (keys in-map)]
-  (apply min (filter some? (mapcat #(mapping-for in-map % 15) in-map-keys))))
+(defn mapping-for
+  "Apply all the fns for kwd in the in-map to the seed"
+  [in-map kwd seed]
+  ((apply juxt (fns-for in-map kwd)) seed))
+
+(
+ (mapping-for in-map :light-to-temperature 555)
+  )
+
+(defn mapping-for-seeds-and-kwds
+  "Apply all the fns for kwd in the in-map to each of the seeds in the in-map"
+  [in-map]
+  (for [seed (:seeds in-map)
+        kwd (keys (dissoc in-map :seeds))]
+    (do (println seed kwd)
+        [seed kwd (mapping-for in-map kwd seed)])
+
+    ))
+
+(mapping-for-seeds-and-kwds in-map)
+
+;(let [in-map (dissoc in-map :seeds)
+;      in-map-keys (keys in-map)]
+;  (apply min (filter some? (mapcat #(mapping-for in-map % 15) in-map-keys))))
