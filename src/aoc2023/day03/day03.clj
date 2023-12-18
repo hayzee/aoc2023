@@ -21,7 +21,28 @@
     #_(->> (map-indexed (fn [i e] [i e]))
          (partition-by (comp digit? second))))
 
+(defn coords
+  [width]
+  (for [x (range)
+        y (range width)]
+    [x y]))
 
+(defn read-file
+  [fname]
+  (-> (slurp (io/resource fname))
+      (s/replace "\n" "")
+      (s/replace "\r" "")))
 
+(defn reduce-thing
+  [thing]
+  {:coords (mapv first thing)
+   :num (map second thing)
+   :type (cond (#{\0 \1 \2 \3 \4 \5 \6 \7 \8 \9} (second (first thing))) :number
+               :else :symbol)})
 
-(slurp (io/resource "day03/part1.txt"))
+(->> (read-file "day03/test.txt")
+     (mapv vector (coords 10))
+     ;(partition-by #(= \. (second %)))
+     ;(remove #(= (second (first %)) \.))
+     ;(map reduce-thing)
+     )

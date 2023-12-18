@@ -53,6 +53,8 @@
 
   ((triple->fn (str->nums "199 98 2")) 100)
 
+  ((triple->fn (str->nums "52 50 48")) 50)
+
   )
 
 (defn extract-line
