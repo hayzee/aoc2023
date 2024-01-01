@@ -14,9 +14,9 @@
   [file-data]
   (count (first file-data)))
 
-(comment
-  (width file-data)
-  )
+;(comment
+;  (width file-data)
+;  )
 
 (defn coords
   [file-data]
@@ -40,10 +40,12 @@
 (defn file-data->map
   [file-data]
   (map
-    (fn [coord char] {:coord coord :char char :type (cond
-                                                      (digit? char) :digit
-                                                      (sym? char) :sym
-                                                      (space? char) :space)})
+    (fn [coord char] {:coord coord
+                      :char char
+                      :type (cond
+                              (digit? char) :digit
+                              (sym? char) :sym
+                              (space? char) :space)})
     (coords file-data)
     (apply str file-data)))
 
@@ -51,12 +53,19 @@
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
+(defn surrounds
+  [[x y]]
+  [[(dec x) (dec y)] [x (dec y)] [(inc x) (dec y)]
+   [(dec x) y] [(inc x) y]
+   [(dec x) (inc y)] [x (inc y)][(inc x) (inc y)]])
+
 (defn tokens
   [line]
-  (hash-map
-    :coords (set (map :coord line))
-    :type (first (map :type line))
-    :token (str (reduce str (map :char line)))))
+  (let [token-type (first (map :type line))]
+   (hash-map
+     :type token-type
+     :coords (set (map :coord line))
+     :token (str (reduce str (map :char line))))))
 
 ;(tokens [{:coord [9 5], :char \5} {:coord [9 6], :char \9} {:coord [9 7], :char \8}])
 
@@ -65,14 +74,11 @@
   (->> (partition-by :type file-data-map)
        (map tokens)))
 
-(->> (tokenise file-data-map)
-     (remove (fn [m] (= (:type m) :space))))
+(tokenise file-data-map)
 
-(defn surrounds
-  [[x y]]
-  [[(dec x) (dec y)] [x (dec y)] [(inc x) (dec y)]
-   [(dec x) y] [(inc x) y]
-   [(dec x) (inc y)] [x (inc y)][(inc x) (inc y)] ])
+(defn token-types
+  [file-data-map]
+  (->> (tokenise file-data-map)
+       (group-by :type)))
 
-(surrounds [8 5])
-
+(token-types file-data-map)
