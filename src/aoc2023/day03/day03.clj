@@ -6,7 +6,7 @@
 (defn read-file
   [fname]
   (-> (slurp (io/resource fname))
-     s/split-lines))
+      s/split-lines))
 
 (def file-data (read-file "day03/test.txt"))
 
@@ -42,10 +42,10 @@
   (map
     (fn [coord char] {:coord coord
                       :char char
-                      :type (cond
-                              (digit? char) :digit
-                              (sym? char) :sym
-                              (space? char) :space)})
+                      :token-type (cond
+                                    (digit? char) :digit
+                                    (sym? char) :sym
+                                    (space? char) :space)})
     (coords file-data)
     (apply str file-data)))
 
@@ -56,22 +56,23 @@
 (defn surrounds
   [[x y]]
   [[(dec x) (dec y)] [x (dec y)] [(inc x) (dec y)]
-   [(dec x) y] [(inc x) y]
+   [(dec x) y] [x y] [(inc x) y]
    [(dec x) (inc y)] [x (inc y)][(inc x) (inc y)]])
 
 (defn tokens
   [line]
-  (let [token-type (first (map :type line))]
-   (hash-map
-     :type token-type
-     :coords (set (map :coord line))
-     :token (str (reduce str (map :char line))))))
-
-;(tokens [{:coord [9 5], :char \5} {:coord [9 6], :char \9} {:coord [9 7], :char \8}])
+  (let [token-type (first (map :token-type line))]
+    (hash-map
+      :token-type token-type
+      :coords (case token-type
+                :space (set (map :coord line))
+                :digit (set (map :coord line))
+                :sym (set (surrounds (first (map :coord line)))))
+      :token (str (reduce str (map :char line))))))
 
 (defn tokenise
   [file-data-map]
-  (->> (partition-by :type file-data-map)
+  (->> (partition-by :token-type file-data-map)
        (map tokens)))
 
 (tokenise file-data-map)
@@ -79,6 +80,6 @@
 (defn token-types
   [file-data-map]
   (->> (tokenise file-data-map)
-       (group-by :type)))
+       (group-by :token-type)))
 
 (token-types file-data-map)
