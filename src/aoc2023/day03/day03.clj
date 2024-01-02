@@ -16,9 +16,7 @@
   [file-data]
   (count (first file-data)))
 
-(comment
-  (width file-data)
-  )
+;(width file-data)
 
 (defn coords
   [file-data]
@@ -57,9 +55,9 @@
 
 (defn surrounds
   [[x y]]
-  [[(dec x) (dec y)] [x (dec y)] [(inc x) (dec y)]
-   [(dec x) y] [x y] [(inc x) y]
-   [(dec x) (inc y)] [x (inc y)][(inc x) (inc y)]])
+  (for [x (range (dec x) (+ x 2))
+        y (range (dec y) (+ y 2))]
+    [x y]))
 
 (defn tokens
   [line]
@@ -77,7 +75,7 @@
   (->> (partition-by :token-type file-data-map)
        (map tokens)))
 
-(tokenise file-data-map)
+;(tokenise file-data-map)
 
 (defn token-types
   [file-data-map]
@@ -88,7 +86,7 @@
                      :space :spaces
                      :symbol :symbols})))
 
-(token-types file-data-map)
+;(token-types file-data-map)
 
 (defn overlaps
   [file-data-map]
@@ -97,9 +95,13 @@
    (for [s symbols
          d digits
          :when (seq (st/intersection (:coords s) (:coords d)))]
-     (:token d))))
+     {:symbol s :digit d})))
 
-(->> (overlaps file-data-map)
-     (map #(Integer/parseInt %))
-     (reduce +))
+(defn solve
+  [file-data-map]
+  (->> (overlaps file-data-map)
+       (map (comp :token :digit))
+       (map #(Integer/parseInt %))
+       (reduce +)))
 
+(solve file-data-map)
