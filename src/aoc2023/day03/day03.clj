@@ -105,3 +105,17 @@
        (reduce +)))
 
 (solve file-data-map)
+
+; part 2
+
+(defn solve2
+  [file-data-map]
+  (->> (overlaps file-data-map)            ; find overlaps
+       (group-by :symbol)                  ; group by common symbols
+       (filter #(< 1 (count (second %))))  ; where the symbol is attached to >1 number
+       (map (fn [[f s]] (reduce * (map (comp #(Integer/parseInt %) :token :digit) s)))) ; multiply the attached digits
+       (reduce +)  ; and sum them
+       ))
+
+; job done!
+(solve2 file-data-map)
