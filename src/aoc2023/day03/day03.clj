@@ -8,15 +8,17 @@
   (-> (slurp (io/resource fname))
       s/split-lines))
 
-(def file-data (read-file "day03/test.txt"))
+;(def file-data (read-file "day03/test.txt"))
+
+(def file-data (read-file "day03/part1.txt"))
 
 (defn width
   [file-data]
   (count (first file-data)))
 
-;(comment
-;  (width file-data)
-;  )
+(comment
+  (width file-data)
+  )
 
 (defn coords
   [file-data]
@@ -44,7 +46,7 @@
                       :char char
                       :token-type (cond
                                     (digit? char) :digit
-                                    (sym? char) :sym
+                                    (sym? char) :symbol
                                     (space? char) :space)})
     (coords file-data)
     (apply str file-data)))
@@ -67,7 +69,7 @@
       :coords (case token-type
                 :space (set (map :coord line))
                 :digit (set (map :coord line))
-                :sym (set (surrounds (first (map :coord line)))))
+                :symbol (set (surrounds (first (map :coord line)))))
       :token (str (reduce str (map :char line))))))
 
 (defn tokenise
@@ -79,7 +81,25 @@
 
 (defn token-types
   [file-data-map]
-  (->> (tokenise file-data-map)
-       (group-by :token-type)))
+  (let [ttypes (->> (tokenise file-data-map)
+                    (group-by :token-type))]
+    (st/rename-keys ttypes
+                    {:digit :digits
+                     :space :spaces
+                     :symbol :symbols})))
 
 (token-types file-data-map)
+
+(defn overlaps
+  [file-data-map]
+  (let [ttypes (token-types file-data-map)
+       {:keys [digits symbols]} ttypes]
+   (for [s symbols
+         d digits
+         :when (seq (st/intersection (:coords s) (:coords d)))]
+     (:token d))))
+
+(->> (overlaps file-data-map)
+     (map #(Integer/parseInt %))
+     (reduce +))
+
