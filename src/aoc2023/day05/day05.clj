@@ -4,124 +4,59 @@
 
 ; part 1
 
-(defn str->nums
-  [st]
-  (let [st (s/trim st)]
-    (when (not= st "")
-      (->> (s/split st #"\s+")
-           (mapv #(Long/parseLong %))))))
+;(def fname "day05/test.txt")
+(def fname "day05/part1.txt")
 
-(comment
+(defn intstr?
+  "True if s is an integer string"
+  [s]
+  (if (= s "")
+    false
+    (every? #(Character/isDigit ^char %) s)))
 
-  (str->nums "1 2 3")
-
-  (str->nums "1 2 3 4 5 7")
-
-  (str->nums "12 23 34 45 56 78")
-
-  (str->nums "")
-
-  (str->nums " ")
-
-  (str->nums "   ")
-
-  (str->nums "      ")
-
-  (str->nums "1 ")
-
-  (str->nums " 1")
-
-  (str->nums " 1 ")
-
-  (str->nums "  3              6              8            999")
-
-  )
-
-(defn triple->fn
+(defn triple->triplefn
+  "Create a triplefn from a triple"
   [[t1 t2 t3]]
-  (fn [n]
-    (when (< (dec t2) n (+ t2 t3))
-      (- n (- t2 t1)))))
+  (fn [i]
+    (when (<= t2 i (dec (+ t2 t3)))
+      (- i (- t2 t1)))))
 
-(comment
-
-  ((triple->fn (str->nums "199 98 2")) 97)
-
-  ((triple->fn (str->nums "199 98 2")) 98)
-
-  ((triple->fn (str->nums "199 98 2")) 99)
-
-  ((triple->fn (str->nums "199 98 2")) 100)
-
-  ((triple->fn (str->nums "52 50 48")) 50)
-
-  )
-
-(defn extract-line
-  [st]
-  (cond
-    (s/starts-with? st "seeds:") [:seeds (str->nums (subs st 7))]
-    (s/ends-with? st  " map:") (-> (s/split st #" ")
-                                   first
-                                   keyword)
-    (= st "") nil
-    (#{\0 \1 \2 \3 \4 \5 \6 \7 \8 \9} (first st)) (str->nums st)
-    :else (throw (ex-info "Unknown input format " {:line st}))))
-
-(defn input->map
-  "Process the input file and get an in-map"
+(defn input-map
   [fname]
   (->> (slurp (io/resource fname))
-       s/split-lines
-       (keep extract-line)
-       flatten
-       (partition-by keyword?)
+       (s/split-lines)
+       (mapcat (fn [line] (s/split line #" ")))
+       (remove (fn [line] (#{"" "map:"} line)))
+       (partition-by intstr?)
        (partition 2)
-       (map (fn [[[f] s]]
-              (if (= :seeds f)
-                [f (vec s)]
-                [f (vec (map (fn [triple] {:triple    (vec triple)
-                                           :triple-fn (triple->fn triple)}) (partition 3 s)))])))
+       (mapv (fn [[f s]]
+               (let [kwd (keyword (s/replace (first f) ":" ""))
+                     nvec (mapv #(Long/parseLong %) s)
+                     triples (mapv vec (partition 3 nvec))]
+                 [kwd
+                  (if (= kwd :seeds)
+                    nvec
+                    {:triples triples
+                     :triple-fns (map triple->triplefn triples)})])))
        (into {})))
 
-(def in-map (input->map "day05/test.txt"))
+(defn apply-fns
+  [input-map kwd seed-val]
+  (or (->> (:triple-fns (kwd input-map))
+           (keep (fn [f] (f seed-val)))
+           first)
+      seed-val))
 
-(defn fns-for
-  "Get all the triple fns from in-map for the given kwd."
-  [in-map kwd]
-  (->> (kwd in-map)
-       (mapv :triple-fn)))
+(defn apply-all-fns
+  [input-map seed-val]
+  [(->> seed-val
+        (apply-fns input-map :seed-to-soil)
+        (apply-fns input-map :soil-to-fertilizer)
+        (apply-fns input-map :fertilizer-to-water)
+        (apply-fns input-map :water-to-light)
+        (apply-fns input-map :light-to-temperature)
+        (apply-fns input-map :temperature-to-humidity)
+        (apply-fns input-map :humidity-to-location))])
 
-; :seed-to-soil
-; :soil-to-fertilizer
-; :fertilizer-to-water
-; :water-to-light
-; :light-to-temperature
-; :temperature-to-humidity
-; :humidity-to-location
-(def fns-for-in-map (fns-for in-map :light-to-temperature))
-
-(defn mapping-for
-  "Apply all the fns for kwd in the in-map to the seed"
-  [in-map kwd seed]
-  ((apply juxt (fns-for in-map kwd)) seed))
-
-(
- (mapping-for in-map :light-to-temperature 555)
-  )
-
-(defn mapping-for-seeds-and-kwds
-  "Apply all the fns for kwd in the in-map to each of the seeds in the in-map"
-  [in-map]
-  (for [seed (:seeds in-map)
-        kwd (keys (dissoc in-map :seeds))]
-    (do (println seed kwd)
-        [seed kwd (mapping-for in-map kwd seed)])
-
-    ))
-
-(mapping-for-seeds-and-kwds in-map)
-
-;(let [in-map (dissoc in-map :seeds)
-;      in-map-keys (keys in-map)]
-;  (apply min (filter some? (mapcat #(mapping-for in-map % 15) in-map-keys))))
+(let [inmap (input-map fname)]
+  (apply min (mapcat #(apply-all-fns inmap %) (:seeds inmap))))
