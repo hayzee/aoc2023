@@ -60,3 +60,23 @@
 
 (let [inmap (input-map fname)]
   (apply min (mapcat #(apply-all-fns inmap %) (:seeds inmap))))
+
+;; part 2 - WIP
+
+(defn range-for-pair
+  [[n1 n2]]
+  (take n2 (iterate inc n1)))
+
+(range-for-pair [22 9])
+
+(def inmap (input-map fname))
+
+(defn expanded-seeds
+  [seeds]
+  (->> seeds
+       (partition 2)
+       (mapcat range-for-pair)))
+
+(comment
+  ; here's the problem - very large number of seeds after expanding the ranges.
+ (count (expanded-seeds (:seeds inmap))))
