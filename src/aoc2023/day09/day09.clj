@@ -2,7 +2,7 @@
   (:require [clojure.java.io :as io]
             [clojure.string :as s]))
 
-;(def fname "day09/test.txt")
+(def fname-test "day09/test.txt")
 
 (def fname "day09/part1.txt")
 
@@ -40,10 +40,20 @@
        (map last)
        reverse
        (reductions +)
-       last
-       ;(mapv (comp vec list))
-       ;reverse
-       ;(mapv into (seq->seqs [10 13 16 21 30 45]))
-       ))
+       last))
 
+; answer 1
 (reduce + (map next-entry (read-file fname)))
+
+; part 2
+
+(defn prior-entry
+  [sq]
+  (->> (seq->seqs sq)
+       (map first)
+       reverse
+       (reductions (fn [a e] (- e a)) 0)
+       last))
+
+; answer 2
+(reduce + (map prior-entry (read-file fname)))
