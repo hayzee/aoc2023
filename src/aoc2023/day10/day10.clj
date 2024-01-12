@@ -16,15 +16,14 @@
        s/split-lines
        (mapv (comp vec seq))))
 
-
-(def board (read-board fname-test))
+(def board (read-board fname))
 
 (defn display-board
   [board]
   (mapv #(println (apply str %)) board)
   (println "============================================"))
 
-(display-board board)
+;(display-board board)
 
 (defn width
   [board]
@@ -46,7 +45,6 @@
 
 (def char-moves
   {
-
    \F [[1 0] [0 1]]
    \7 [[1 0] [0 -1]]
    \L [[-1 0] [0 1]]
@@ -75,17 +73,11 @@
                         set)
         new-pos (-> (st/difference candidates (set positions))
                     first)]
-    ;(clojure.pprint/pprint {:pos        pos
-    ;                        :char       char
-    ;                        :moves      moves
-    ;                        :candidates candidates
-    ;                        :positions  positions
-    ;                        :move       new-pos})
     [new-pos (conj positions pos)]))
 
-(make-move board start-pos [])
-(make-move board [2 1] [[1 1]])
-(make-move board [3 1] [[1 1] [2 1]])
+;(make-move board start-pos [])
+;(make-move board [2 1] [[1 1]])
+;(make-move board [3 1] [[1 1] [2 1]])
 
 (defn board-iterator
   [board]
@@ -94,6 +86,8 @@
 
 ;(second (last (take-while first (iterate (board-iterator board) [start-pos []]))))
 
+;; Part 1
+
 (->
   (reductions (fn [a e] (assoc-in a e \*)) board (second (last (take-while first (iterate (board-iterator board) [start-pos []])))))
   ;(map display-board)
@@ -101,13 +95,12 @@
   (/ 2))
 
 
-;;
+;; Part 2 - WIP
 
+; This will get all the moves rather than all but last.
+(def all-moves
+  (let [[s1 s2] (split-with first (iterate (board-iterator board) [start-pos []]))]
+    (-> (first s2)
+        second)))
 
-(let [[s1 s2] (split-with first (iterate (board-iterator board) [start-pos []]))]
-  [s1
-   (-> (first s2)
-       second)])
-
-
-;(drop-while first (iterate (board-iterator board) [start-pos []]))
+(display-board (reduce (fn [a e] (assoc-in a e \*)) board all-moves))
