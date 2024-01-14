@@ -70,6 +70,12 @@
 
 ; part 1
 
-(/ (reduce + (map distance (cross-product (find-galaxies (expand-universe (read-file fname))))))
+(/ (->> fname
+        read-file
+        expand-universe
+        find-galaxies
+        cross-product
+        (map distance)
+        (reduce +))
    2)
 
